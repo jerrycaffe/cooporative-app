@@ -1,0 +1,4 @@
+#Exclude files from the backend directory
+backend/node_modules
+backend/.env
+backend/config
