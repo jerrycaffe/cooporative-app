@@ -9,10 +9,11 @@ module.exports = {
         type: Sequelize.INTEGER
       },
       firstname: {
-        type: Sequelize.STRING
+        type: Sequelize.STRING,
+        allowNull: false
       },
       lastname: {
-        type: Sequelize.STRING(50),
+        type: Sequelize.STRING,
         allowNull: false
       },
       password: {
@@ -28,27 +29,27 @@ module.exports = {
         type: Sequelize.DATEONLY
       },
       phone_number: {
-        type: Sequelize.STRING(20),
+        type: Sequelize.STRING,
         allowNull: false
       },
       address: {
-        type: Sequelize.STRING(50)
+        type: Sequelize.STRING
       },
       img_url: {
         type: Sequelize.STRING
       },
       role: {
-        type: Sequelize.STRING(20),
+        type: Sequelize.STRING,
         defaultValue: "user"
       },
       employed_as: {
-        type: Sequelize.STRING(25)
+        type: Sequelize.STRING
       },
       branch: {
-        type: Sequelize.STRING(50)
+        type: Sequelize.STRING
       },
       monthly_savings: {
-        type: Sequelize.STRING
+        type: Sequelize.DECIMAL
       },
       account_number: {
         type: Sequelize.STRING
@@ -57,7 +58,7 @@ module.exports = {
         type: Sequelize.STRING
       },
       status: {
-        type: Sequelize.STRING(20),
+        type: Sequelize.STRING,
         defaultValue: "active"
       },
       createdAt: {
