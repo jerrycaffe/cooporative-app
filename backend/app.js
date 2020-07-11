@@ -1,6 +1,9 @@
 import express from 'express';
 import morgan from 'morgan';
 
+import dbConnection from './config/dbconnection';
+
+
 // Initializing App
 const app = express();
 
@@ -13,6 +16,7 @@ app.use(express.urlencoded({extended: true}))
 app.use(morgan('tiny'))
 
 // Database connection
+dbConnection();
 
 // routes
 app.get('/', (req, res)=>{
