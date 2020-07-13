@@ -2,6 +2,8 @@ import express from 'express';
 import morgan from 'morgan';
 
 import staff from './routes/api/authStaff';
+import item from './routes/api/items';
+
 import dbConnection from './config/dbconnection';
 
 
@@ -21,6 +23,8 @@ dbConnection();
 
 // routes
 app.use('/auth/staff', staff);
+app.use('/item', item);
+
 
 app.get('/', (req, res)=>{
   res.send("Welcome to Honeyland Welfare Home")

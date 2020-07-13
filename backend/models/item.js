@@ -15,6 +15,18 @@ module.exports = (sequelize, DataTypes) => {
     total_amount: {
       type: DataTypes.DECIMAL
     },
+    profit: {
+      type: DataTypes.STRING
+    },
+    name: {
+      type: DataTypes.STRING
+    },
+    description: {
+      type: DataTypes.STRING
+    },
+    selling_price: {
+      type: DataTypes.STRING
+    },
     status: {
       type: DataTypes.STRING,
       defaultValue: "Available"
