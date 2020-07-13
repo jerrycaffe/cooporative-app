@@ -4,8 +4,8 @@ import { config } from "dotenv";
 
 config();
 
-import { staff } from "../models";
-
+import { staff, saving, item, purchase, loan, complaint } from "../models";
+import models from "../models";
 const addStaff = async (req, res, next) => {
   // get all variables from request body
   const {
@@ -183,4 +183,114 @@ const staffLogin = async (req, res, next) => {
   }
 };
 
-export { addStaff, staffLogin };
+const adminViewAll = async (req, res, next) => {
+  try {
+    const allStaff = await staff.findAll({
+      attributes: [
+        "firstname",
+        "lastname",
+        "email",
+        "dob",
+        "phone_number",
+        "address",
+        "img_url",
+        "employed_as",
+        "branch",
+        "monthly_savings",
+        "account_number",
+        "bank_name",
+        "status"
+      ],
+      where: { role: "user" }
+    });
+
+    return res.status(200).json({
+      status: 200,
+      count: allStaff.length,
+      message: allStaff
+    });
+  } catch (error) {
+    console.log(error);
+    return next();
+  }
+};
+
+const adminViewOne = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const allStaff = await staff.findOne({
+      attributes: [
+        "firstname",
+        "lastname",
+        "email",
+        "dob",
+        "phone_number",
+        "address",
+        "img_url",
+        "employed_as",
+        "branch",
+        "monthly_savings",
+        "account_number",
+        "bank_name",
+        "status"
+      ],
+      where: { id, role: "user" },
+      include: [
+        { model: saving },
+        { model: item },
+        { model: loan },
+        { model: purchase },
+        { model: complaint }
+      ]
+    });
+
+    return res.status(200).json({
+      status: 200,
+      message: allStaff
+    });
+  } catch (error) {
+    console.log(error);
+    return next();
+  }
+};
+
+const adminViewBranch = async (req, res, next) => {
+  const { branch } = req.body;
+  if (!branch) {
+    return res
+      .status(400)
+      .json({ status: 400, error: "Please select a branch" });
+  }
+  try {
+    const allStaff = await staff.findAll({
+      attributes: [
+        "firstname",
+        "lastname",
+        "email",
+        "dob",
+        "phone_number",
+        "address",
+        "img_url",
+        "employed_as",
+        "branch",
+        "monthly_savings",
+        "account_number",
+        "bank_name",
+        "status"
+      ],
+      where: { role: "user", branch }
+    });
+
+    return res.status(200).json({
+      status: 200,
+      count: allStaff.length,
+      message: allStaff
+    });
+  } catch (error) {
+    console.log(error);
+    return next();
+  }
+};
+
+export { addStaff, staffLogin, adminViewAll, adminViewOne, adminViewBranch };

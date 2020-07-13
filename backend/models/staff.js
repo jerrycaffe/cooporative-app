@@ -28,11 +28,11 @@ module.exports = (sequelize, DataTypes) => {
   );
   staff.associate = function(models) {
     // associations can be defined here
-    staff.hasMany(models.saving);
-    staff.hasMany(models.item);
-    staff.hasMany(models.purchase);
-    staff.hasMany(models.loan);
-    staff.hasMany(models.complaint);
+    staff.hasMany(models.saving, { foreignKey: 'id'});
+    staff.hasMany(models.item, { foreignKey: 'id'});
+    staff.hasMany(models.purchase, { foreignKey: 'id'});
+    staff.hasMany(models.loan, { foreignKey: 'id'});
+    staff.hasMany(models.complaint, { foreignKey: 'id'});
   };
   return staff;
 };
