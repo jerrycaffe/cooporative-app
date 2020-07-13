@@ -1,6 +1,8 @@
 #Exclude files from the backend directory
 backend/node_modules
 backend/.env
-backend/config
+backend/config/config.json
+backend/config/dbconnection.js
+
 
 #Any other one
