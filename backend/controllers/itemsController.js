@@ -1,11 +1,11 @@
-import { item } from "../models";
+import { item, staff } from "../models";
 
 const addItems = async (req, res, next) => {
   const image = req.file;
 
   const { id } = req.user;
   let { unit, unit_amount, name, description, selling_price } = req.body;
-console.log(description, selling_price)
+  console.log(description, selling_price);
   const allowedTypes = ["image/png", "image/jpeg"];
 
   if (image === undefined) {
@@ -43,7 +43,7 @@ console.log(description, selling_price)
   unit = !unit ? 1 : unit;
 
   const total_amount = unit * unit_amount;
-  const profit = (selling_price * unit) - total_amount;
+  const profit = selling_price * unit - total_amount;
   try {
     const newItem = await item.create({
       added_by: id,
@@ -75,5 +75,127 @@ console.log(description, selling_price)
     return next();
   }
 };
+const viewOne = async (req, res, next) => {
+  const { id } = req.params;
+  try {
+    const foundItem = await item.findOne({
+      attributes: [
+        "name",
+        "description",
+        "selling_price",
+        "status",
+        "unit",
+        "img_url",
+        ["updatedAt", "date added"]
+      ],
+      where: { id }
+    });
+    if (!foundItem) {
+      return res.status(203).json({
+        status: 203,
+        message: "No record found for this item"
+      });
+    }
+    return res.status(200).json({
+      status: 200,
+      items: foundItem
+    });
+  } catch (error) {
+    console.log(error);
+    return next();
+  }
+};
 
-export { addItems };
+const viewAll = async (req, res, next) => {
+  try {
+    const foundItem = await item.findAll({
+      attributes: [
+        "name",
+        "description",
+        "selling_price",
+        "status",
+        "unit",
+        "img_url",
+        ["updatedAt", "date added"]
+      ]
+    });
+
+    return res.status(200).json({
+      status: 200,
+      items: foundItem
+    });
+  } catch (error) {
+    console.log(error);
+    return next();
+  }
+};
+
+const adminViewAll = async (req, res, next) => {
+  try {
+    const foundItem = await item.findAll({
+      attributes: [
+        "name",
+        "description",
+        "selling_price",
+        "status",
+        "unit",
+        "unit_amount",
+        "total_amount",
+        "profit",
+        "img_url",
+        ["updatedAt", "date added"]
+      ]
+    });
+
+    return res.status(200).json({
+      status: 200,
+      items: foundItem
+    });
+  } catch (error) {
+    console.log(error);
+    return next();
+  }
+};
+
+const adminViewOne = async (req, res, next) => {
+  const { id } = req.params;
+  try {
+    const foundItem = await item.findOne({
+      attributes: [
+        "name",
+        "description",
+        "selling_price",
+        "status",
+        "unit",
+        "unit_amount",
+        "total_amount",
+        "profit",
+        "img_url",
+        ["updatedAt", "date added"]
+      ],
+      where: { id },
+      include: [
+        {
+          model: staff,
+          attributes: [
+            "firstname",
+            "lastname",
+            "phone_number",
+            "branch",
+            "status"
+          ]
+        }
+      ]
+    });
+
+    return res.status(200).json({
+      status: 200,
+      items: foundItem
+    });
+  } catch (error) {
+    console.log(error);
+    return next();
+  }
+};
+
+export { addItems, viewOne, viewAll, adminViewAll, adminViewOne };
