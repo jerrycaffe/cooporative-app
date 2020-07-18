@@ -78,9 +78,8 @@ const addStaff = async (req, res, next) => {
         email,
         phone_number
       }
-    })
-    
-    
+    });
+
     // check if the result of check is not empty
     if (checkUser.length) {
       return res.status(409).json({
@@ -295,4 +294,79 @@ const adminViewBranch = async (req, res, next) => {
   }
 };
 
-export { addStaff, staffLogin, adminViewAll, adminViewOne, adminViewBranch };
+const staffProfile = async (req, res, next) => {
+  const userId = req.user.id;
+  const { id } = req.params;
+  try {
+    if (userId != id) {
+      return res.status(403).json({
+        status: 403,
+        error: "You cannot view this resource"
+      });
+    }
+
+    const profile = await staff.findOne({
+      where: { id: userId },
+      include: [
+        { model: saving },
+        { model: item },
+        { model: loan },
+        { model: purchase },
+        { model: complaint }
+      ]
+    });
+    console.log(profile.dataValues);
+    const {
+      firstname,
+      lastname,
+      email,
+      dob,
+      phone_number,
+      address,
+      img_url,
+      employed_as,
+      monthly_savings,
+      accunt_number,
+      bank_name,
+      savings,
+      items,
+      loans,
+      purchases,
+      complaints
+    } = profile.dataValues;
+
+    return res.status(200).json({
+      status: 200,
+      user: {
+        firstname,
+        lastname,
+        email,
+        dob,
+        phone_number,
+        address,
+        img_url,
+        employed_as,
+        monthly_savings,
+        accunt_number,
+        bank_name,
+        savings,
+        items,
+        loans,
+        purchases,
+        complaints
+      }
+    });
+  } catch (error) {
+    console.log(error);
+    next();
+  }
+};
+
+export {
+  addStaff,
+  staffLogin,
+  adminViewAll,
+  adminViewOne,
+  adminViewBranch,
+  staffProfile
+};
