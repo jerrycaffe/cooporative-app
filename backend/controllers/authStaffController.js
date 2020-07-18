@@ -62,8 +62,8 @@ const addStaff = async (req, res, next) => {
 
   // cross cehck confirm password
   if (password !== confirm_password) {
-    return res.status(401).json({
-      status: 401,
+    return res.status(409).json({
+      status: 409,
       error: "password and confirm password must match"
     });
   }
@@ -78,14 +78,16 @@ const addStaff = async (req, res, next) => {
         email,
         phone_number
       }
-    });
+    })
+    
+    
     // check if the result of check is not empty
     if (checkUser.length) {
       return res.status(409).json({
         status: 409,
         success: false,
         message:
-          "User with this email and phone number already exist please provide another email or password"
+          "User with this email and phone number already exist please provide another email and phone number to add staff"
       });
     }
 
