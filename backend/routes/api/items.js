@@ -2,7 +2,7 @@ import {addItems, viewOne, viewAll, adminViewAll, adminViewOne, adminEdit, admin
 import {adminProtect} from '../../middleware/auth'
 import {Router} from 'express';
 
-import parser from '../../config/cloudinaryConfig'
+import parser from '../../config/cloudinaryConfig';
 
 const router = Router();
 

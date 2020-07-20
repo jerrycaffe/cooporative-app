@@ -6,8 +6,25 @@ config();
 
 import { staff, saving, item, purchase, loan, complaint } from "../models";
 import models from "../models";
+
+import {
+  isNameValid,
+  isEmpty,
+  isEmailValid,
+  isPhoneNumberValid,
+  isPasswordValid,
+  isNumberValid
+} from "../middleware/validate";
+
+
 const addStaff = async (req, res, next) => {
   // get all variables from request body
+  const validateError = (error, code) => {
+    return res.status(code).json({
+      code,
+      error
+    });
+  };
   const {
     firstname,
     lastname,
@@ -19,7 +36,12 @@ const addStaff = async (req, res, next) => {
 
   // check for any empty field before adding staff
   if (
-    (!firstname, !lastname, !email, !password, !confirm_password, !phone_number)
+    isEmpty(firstname) ||
+    isEmpty(lastname) ||
+    isEmpty(email) ||
+    isEmpty(password) ||
+    isEmpty(confirm_password) ||
+    isEmpty(phone_number)
   ) {
     return res.status(401).json({
       status: 401,
@@ -28,15 +50,15 @@ const addStaff = async (req, res, next) => {
   }
 
   // check if there is an unwanted variable in name
-  if (!firstname.match(/^[A-Za-z]+$/) || !lastname.match(/^[A-Za-z]+$/)) {
+  if (!isNameValid(firstname) || !isNameValid(lastname)) {
     return res.status(401).json({
       status: 401,
       error: "firstname and lastname must  be alphabets"
     });
   }
   // email format
-  const re = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-  if (!re.test(email)) {
+
+  if (!isEmailValid(email)) {
     return res.status(401).json({
       status: 401,
       error: "Email do not match correct format"
@@ -44,8 +66,8 @@ const addStaff = async (req, res, next) => {
   }
 
   // check if the phone number is 11 values
-  const phoneNumStr = phone_number.split("");
-  if (phoneNumStr.length !== 11 || phone_number.match(/[^0-9]/g)) {
+
+  if (!isPhoneNumberValid(phone_number)) {
     return res.status(401).json({
       status: 401,
       error: "Phone number must be 11 numbers"
@@ -53,7 +75,7 @@ const addStaff = async (req, res, next) => {
   }
 
   // check if password length is greater than 6
-  if (password.length < 6) {
+  if (!isPasswordValid(password)) {
     return res.status(401).json({
       status: 401,
       error: "password must be greater than 6 characters"
@@ -110,7 +132,6 @@ const addStaff = async (req, res, next) => {
     console.log(error);
     return next(error);
   }
-
   return res.status(503).json({
     status: 503,
     message: "Unable to complete your request at this time please try later"
@@ -120,10 +141,16 @@ const addStaff = async (req, res, next) => {
 const staffLogin = async (req, res, next) => {
   const { email, password } = req.body;
 
-  if (!email || !password) {
+  if (isEmpty(email) || isEmpty(password)) {
     return res.status(400).json({
       status: 400,
       error: "email and password is required"
+    });
+  }
+  if (!isEmailValid(email)) {
+    return res.status(401).json({
+      status: 401,
+      error: "Invalid email field"
     });
   }
   try {
@@ -258,7 +285,7 @@ const adminViewOne = async (req, res, next) => {
 
 const adminViewBranch = async (req, res, next) => {
   const { branch } = req.body;
-  if (!branch) {
+  if (isEmpty(branch)) {
     return res
       .status(400)
       .json({ status: 400, error: "Please select a branch" });
@@ -315,7 +342,7 @@ const staffProfile = async (req, res, next) => {
         { model: complaint }
       ]
     });
-    console.log(profile.dataValues);
+
     const {
       firstname,
       lastname,
@@ -326,7 +353,7 @@ const staffProfile = async (req, res, next) => {
       img_url,
       employed_as,
       monthly_savings,
-      accunt_number,
+      account_number,
       bank_name,
       savings,
       items,
@@ -347,7 +374,7 @@ const staffProfile = async (req, res, next) => {
         img_url,
         employed_as,
         monthly_savings,
-        accunt_number,
+        account_number,
         bank_name,
         savings,
         items,
@@ -362,11 +389,121 @@ const staffProfile = async (req, res, next) => {
   }
 };
 
+const staffUpdateProfile = async (req, res, next) => {
+  let image = req.file;
+  const userId = req.user.id;
+  const { id } = req.params;
+
+  let {
+    firstname: first_name,
+    lastname: last_name,
+    dob: d_o_b,
+    phone_number: phoneNumber,
+    address: homeAddress,
+    branch: campus,
+    employed_as: employedAs,
+    monthly_savings: savings,
+    account_number: accountNumber,
+    bank_name: bankName
+  } = req.body;
+
+  if (userId != id) {
+    return res.status(403).json({
+      status: 403,
+      error: "You cannot view this resource"
+    });
+  }
+  if (image !== undefined && allowedTypes.indexOf(image.mimetype) === -1) {
+    return res.status(400).json({
+      status: 400,
+      message: "Ensure your image is of type png or jpg"
+    });
+  }
+  if (
+    (!isEmpty(first_name) && !isNameValid(first_name)) ||
+    (!isEmpty(last_name) && !isNameValid(last_name))
+  ) {
+    return res.status(400).json({
+      error: "Make sure all names are in alphabets",
+      status: 400
+    });
+  }
+  if (!isEmpty(phoneNumber) && !isPhoneNumberValid(phoneNumber)) {
+    return res.status(400).json({
+      error: "Make sure phone number is 11 digit number",
+      status: 400
+    });
+  }
+  if(!isNumberValid(savings)){
+    return res.status(400).json({
+      error: "Make sure monthly savings is digits only",
+      status: 400
+    });
+  }
+
+  try {
+    const findStaff = await staff.findByPk(id);
+    let {
+      lastname,
+      firstname,
+      dob,
+      phone_number,
+      address,
+      employed_as,
+      monthly_savings,
+      account_number,
+      bank_name,
+      img_url,
+      branch
+    } = findStaff.dataValues;
+
+    firstname = first_name ? first_name : firstname;
+    lastname = last_name ? last_name : lastname;
+    dob = d_o_b ? d_o_b : dob;
+    phone_number = phoneNumber ? phoneNumber : phone_number;
+    address = homeAddress ? homeAddress : address;
+    image = image ? image.path : img_url;
+    employed_as = employedAs ? employedAs : employed_as;
+    branch = campus ? campus : branch;
+    monthly_savings = savings ? savings : monthly_savings;
+    account_number = accountNumber ? accountNumber : account_number;
+    bank_name = bankName ? bankName : bank_name;
+
+    const saveChanges = await findStaff.update({
+      firstname,
+      lastname,
+      dob,
+      phone_number,
+      address,
+      img_url: image,
+      employed_as,
+      branch,
+      monthly_savings,
+      account_number,
+      bank_name
+    });
+
+    if (saveChanges) {
+      return res.status(201).json({
+        status: 201,
+        message: "You have successfully updated your profile"
+      });
+    }
+    return res.status(500).json({
+      status: 500,
+      message: "Something went wrong try again later"
+    });
+  } catch (error) {
+    console.log(error);
+    return next();
+  }
+};
 export {
   addStaff,
   staffLogin,
   adminViewAll,
   adminViewOne,
   adminViewBranch,
-  staffProfile
+  staffProfile,
+  staffUpdateProfile
 };
