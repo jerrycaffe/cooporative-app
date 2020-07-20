@@ -1,14 +1,15 @@
 import { item, staff } from "../models";
+import { isEmpty, isNumberValid } from "../middleware/validate";
 
 const addItems = async (req, res, next) => {
   const image = req.file;
 
   const { id } = req.user;
-  let { unit, unit_amount, name, description, selling_price } = req.body;
-  console.log(description, selling_price);
+  let { unit, unit_amount, name, description } = req.body;
+
   const allowedTypes = ["image/png", "image/jpeg"];
 
-  if (image === undefined) {
+  if (isEmpty(image)) {
     return res.status(400).json({
       status: 400,
       error: "Please select an image for the item"
@@ -22,28 +23,30 @@ const addItems = async (req, res, next) => {
     });
   }
 
-  if (!name || !description) {
+  if (isEmpty(name) || isEmpty(description)) {
     return res.status(400).json({
       status: 400,
       error: "fill the name and description of the product"
     });
   }
+
   if (
-    !unit_amount ||
-    unit_amount.match(/[^0-9]/g) ||
-    !selling_price ||
-    selling_price.match(/[^0-9]/g)
+    (unit && !isNumberValid(unit)) ||
+    isEmpty(unit_amount) ||
+    !isNumberValid(unit_amount)
   ) {
     return res.status(400).json({
       status: 400,
-      error: "Please input unit amount and selling price in number"
+      error: "Please input unit, unit amount and selling price in number"
     });
   }
 
   unit = !unit ? 1 : unit;
-
+  const selling_price = parseInt(unit_amount) +parseInt(unit_amount) * 0.05;
   const total_amount = unit * unit_amount;
-  const profit = selling_price * unit - total_amount;
+  const profit = (selling_price * unit) - total_amount;
+  console.log("selling at ",selling_price, profit, unit_amount);
+  
   try {
     const newItem = await item.create({
       added_by: id,
@@ -188,11 +191,11 @@ const adminViewOne = async (req, res, next) => {
       ]
     });
 
-    if(!foundItem){
+    if (!foundItem) {
       return res.status(200).json({
         status: 200,
         message: "No item found"
-      })
+      });
     }
 
     return res.status(200).json({
@@ -209,11 +212,12 @@ const adminEdit = async (req, res, next) => {
   let image = req.file;
 
   const { id } = req.params;
-  let { unit, unit_amount, name, description, selling_price } = req.body;
+  let { unit, unit_amount, name, description } = req.body;
+
   if (
-    (unit !== undefined && unit.match(/[^0-9]/g)) ||
-    (unit_amount !== undefined && unit_amount.match(/[^0-9]/g)) ||
-    (unit_amount !== undefined && selling_price.match(/[^0-9]/g))
+    (!isEmpty(unit) && !isNumberValid(unit)) ||
+    (!isEmpty(unit_amount) && !isNumberValid(unit_amount))
+    // (!isEmpty(selling_price) && !isNumberValid(selling_price))
   ) {
     return res.status(400).json({
       status: 400,
@@ -223,7 +227,7 @@ const adminEdit = async (req, res, next) => {
 
   const allowedTypes = ["image/png", "image/jpeg"];
 
-  if (image !== undefined && allowedTypes.indexOf(image.mimetype) === -1) {
+  if (!isEmpty(image) && allowedTypes.indexOf(image.mimetype) === -1) {
     return res.status(400).json({
       status: 400,
       message: "Ensure your image is of type png or jpg"
@@ -237,27 +241,29 @@ const adminEdit = async (req, res, next) => {
         error: "Sorry this item does not exist"
       });
     }
-    // console.log(originalItem.dataValues.img_url, image)
-    image = !image ? originalItem.dataValues.img_url : image.path;
 
-    name = !name ? originalItem.dataValues.name : name;
+    const {
+      img_url,
+      name: dbName,
+      description: dbDescription,
+      unit: dbUnit,
+      // selling_price: dbSellingPrice,
+      unit_amount: dbUnitAmount
+    } = originalItem.dataValues;
 
-    description = !description
-      ? originalItem.dataValues.description
-      : description;
-
-    unit = !unit ? originalItem.dataValues.unit : unit;
-    selling_price = !selling_price
-      ? originalItem.dataValues.selling_price
-      : selling_price;
-    unit_amount = !unit_amount
-      ? originalItem.dataValues.unit_amount
-      : unit_amount;
+    image = image ? image.path : img_url;
+    name = name ? name : dbName;
+    description = description ? description : dbDescription;
+    unit = unit ? unit : dbUnit;
+    // selling_price = selling_price ? selling_price : dbSellingPrice;
+    unit_amount = unit_amount ? unit_amount : dbUnitAmount;
 
     // Calculate the total amount for the item
     const total_amount = unit * unit_amount;
-    const profit = selling_price * unit - total_amount;
+    const toBeSoldAt = parseInt(unit_amount) +parseInt(unit_amount) * 0.05;
 
+    const profit = (unit * toBeSoldAt) - total_amount;
+console.log(profit, toBeSoldAt)
     const newItem = await item.update(
       {
         unit,
@@ -266,7 +272,7 @@ const adminEdit = async (req, res, next) => {
         img_url: image,
         profit,
         name,
-        selling_price,
+        selling_price: toBeSoldAt,
         description
       },
       { where: { id } }
