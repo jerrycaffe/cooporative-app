@@ -15,7 +15,7 @@ module.exports = (sequelize, DataTypes) => {
   saving.associate = function(models) {
     // associations can be defined here
     saving.belongsTo(models.staff, {
-      as: 'saved_by',
+      as: 'account_owner',
       foreignKey: 'staff_id'
     })
     saving.belongsTo(models.staff, {
