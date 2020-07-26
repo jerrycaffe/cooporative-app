@@ -16,7 +16,6 @@ import {
   isNumberValid
 } from "../middleware/validate";
 
-
 const addStaff = async (req, res, next) => {
   // get all variables from request body
   const validateError = (error, code) => {
@@ -263,14 +262,7 @@ const adminViewOne = async (req, res, next) => {
         "bank_name",
         "status"
       ],
-      where: { id, role: "user" },
-      include: [
-        { model: saving },
-        { model: item },
-        { model: loan },
-        { model: purchase },
-        { model: complaint }
-      ]
+      where: { id, role: "user" }
     });
 
     return res.status(200).json({
@@ -333,55 +325,25 @@ const staffProfile = async (req, res, next) => {
     }
 
     const profile = await staff.findOne({
-      where: { id: userId },
-      include: [
-        { model: saving },
-        { model: item },
-        { model: loan },
-        { model: purchase },
-        { model: complaint }
-      ]
+      attributes: [
+        "firstname",
+        "lastname",
+        "email",
+        "dob",
+        "phone_number",
+        "address",
+        "img_url",
+        "employed_as",
+        "monthly_savings",
+        "account_number",
+        "bank_name"
+      ],
+      where: { id: userId }
     });
-
-    const {
-      firstname,
-      lastname,
-      email,
-      dob,
-      phone_number,
-      address,
-      img_url,
-      employed_as,
-      monthly_savings,
-      account_number,
-      bank_name,
-      savings,
-      items,
-      loans,
-      purchases,
-      complaints
-    } = profile.dataValues;
 
     return res.status(200).json({
       status: 200,
-      user: {
-        firstname,
-        lastname,
-        email,
-        dob,
-        phone_number,
-        address,
-        img_url,
-        employed_as,
-        monthly_savings,
-        account_number,
-        bank_name,
-        savings,
-        items,
-        loans,
-        purchases,
-        complaints
-      }
+      user: profile
     });
   } catch (error) {
     console.log(error);
@@ -434,7 +396,7 @@ const staffUpdateProfile = async (req, res, next) => {
       status: 400
     });
   }
-  if(!isNumberValid(savings)){
+  if (!isNumberValid(savings)) {
     return res.status(400).json({
       error: "Make sure monthly savings is digits only",
       status: 400
