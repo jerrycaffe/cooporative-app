@@ -16,7 +16,8 @@ const uploadSavings = async (req, res, next) => {
     // check if the user exist and the status is not deactivated
     const findStaff = await saving.findOne({
       where: { staff_id },
-      include: ["account_owner"]
+      include: ["account_owner"],
+      order: [ [ 'createdAt', 'DESC' ]]
     });
     // const savingsRecord = await saving.findOne({where: {staff_id}, include: {model: staff}})
 

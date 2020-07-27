@@ -1,5 +1,6 @@
 import { loan, staff, saving } from "../models";
 import { isEmpty, isNumberValid } from "../middleware/validate";
+
 const loanRequest = async (req, res, next) => {
   const { id } = req.params;
   const { amount, repayment, purpose } = req.body;
@@ -19,26 +20,102 @@ const loanRequest = async (req, res, next) => {
     });
   }
   try {
-    const findUser = await saving.findOne({where: {staff_id}})
-    console.log("Found user",findUser)
-    // check if user has loan
-    // if(parseInt(findUser.dataValues.loans.balance))
-    // check if user is eligible
-    // check if the user has current loan
-    // const sevenPercent = parseInt(amount) + (parseInt(amount)*(0.07))
-    // const fivePer 
-    // const interest = (repayment <= 12)? 
-    // const updateLoan = await loan.update({
-      // staff_id: id,
-      // amount,
-    //   interest: 
-    // })
-    // check user eligibility
+    //Perform a serach to check if the user has a loan
+    const checkUserLoan = await loan.findOne({
+      attributes: ["balance"],
+      where: { staff_id: id },
+      order: [["createdAt", "DESC"]]
+    });
+
+    // const findUser = await saving.findOne({where: {staff_id}})
+    if (checkUserLoan) {
+      const { balance, status } = checkUserLoan.dataValues;
+      const checkBalance = parseInt(balance);
+      if (checkBalance > 1 || status === "PENDING") {
+        return res.status(403).json({
+          status: 403,
+          error:
+            "You have previously made a loan request that is pending or you have a loan you are currently servicing, kindly try later when your loan has been fully settled or contact an admin to see to your pending loan reguest"
+        });
+      }
+    }
+    const checkUserSavings = await saving.findOne({
+      attributes: ["balance"],
+      where: { staff_id: id },
+      order: [["createdAt", "DESC"]]
+    });
+
+    if (!checkUserSavings) {
+      return res.status(403).json({
+        status: 403,
+        error:
+          "You are not elligle for laon because you currently do not have a saving"
+      });
+    }
+    const amountRequested = parseInt(amount);
+    const amountSaved = parseInt(checkUserSavings.dataValues.balance);
+    const monthOfpayment = parseInt(repayment);
+    const checkEligible = amountSaved * 0.7 * 2;
+    const sevenPercent = amountRequested * 0.07;
+    const fivePercent = amountRequested * 0.05;
+    const interest = monthOfpayment <= 12 ? fivePercent : sevenPercent;
+    // console.log("Interest",interest, "amount ellible to cllect",checkEligible);
+    if (amountRequested > checkEligible) {
+      return res.status(403).json({
+        status: 403,
+        error:
+          "You are not ellible to collect this amount you specified, kindly reduce it or contact the admin"
+      });
+    }
+    const totalLoanBal = amountRequested + interest;
+    const makeLoan = await loan.create({
+      staff_id: id,
+      amount,
+      interest,
+      repayment: monthOfpayment,
+      balance: totalLoanBal,
+      purpose
+    });
+
+    if (makeLoan) {
+      return res.status(201).json({
+        status: 201,
+        message:
+          "Thank you for making a loan request, your loan request is pending and awaiting admin approval, kindly check back to see if your request is approved by an admin"
+      });
+    }
+    // Math.max(
+    //   ...array.map(function(o) {
+    //     return o.y;
+    //   })
+    // );
+
+    return res.status(500).json({
+      status: 500,
+      error: "Your request cannot be completed at this time kindly try later"
+    });
   } catch (error) {
-    console.log(error)
-    return next()
+    console.log(error);
+    return next();
   }
-  return res.json({message: "it is ok"})
 };
 
-export { loanRequest };
+const adminViewAllLoans = async (req, res, next) => {
+  try {
+    const allLoans = await loan.findAll({
+      attributes: ['balance'],
+      include: ["owner", "approver"],
+      order: [["createdAt", "DESC"]]
+
+    });
+    return res.status(200).json({
+      status: 200,
+      user: allLoans
+    })
+  } catch (error) {
+    console.log(error);
+    return next();
+  }
+};
+
+export { loanRequest, adminViewAllLoans };
