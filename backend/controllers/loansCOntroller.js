@@ -103,15 +103,21 @@ const loanRequest = async (req, res, next) => {
 const adminViewAllLoans = async (req, res, next) => {
   try {
     const allLoans = await loan.findAll({
-      attributes: ['balance'],
-      include: ["owner", "approver"],
+      include: [{model: staff, as: "owner", attributes: ['firstname']}, {model: staff, as: "approver", attributes: ['firstname']}],
       order: [["createdAt", "DESC"]]
-
     });
-    return res.status(200).json({
-      status: 200,
-      user: allLoans
-    })
+   
+    if (allLoans) {
+      return res.status(200).json({
+        status: 200,
+        allLoans
+       
+      });
+    } else
+      return res.status(500).json({
+        status: 500,
+        message: "Something went wrong please try again"
+      });
   } catch (error) {
     console.log(error);
     return next();
