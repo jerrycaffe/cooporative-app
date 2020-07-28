@@ -103,15 +103,36 @@ const loanRequest = async (req, res, next) => {
 const adminViewAllLoans = async (req, res, next) => {
   try {
     const allLoans = await loan.findAll({
-      include: [{model: staff, as: "owner", attributes: ['firstname']}, {model: staff, as: "approver", attributes: ['firstname']}],
+      include: [
+        {
+          model: staff,
+          as: "owner",
+          attributes: [
+            "firstname",
+            "lastname",
+            "phone_number",
+            "email",
+            "img_url",
+            "branch",
+            "monthly_savings",
+            "account_number",
+            "bank_name",
+            "status"
+          ]
+        },
+        {
+          model: staff,
+          as: "approver",
+          attributes: ["firstname", "lastname", "email", "phone_number"]
+        }
+      ],
       order: [["createdAt", "DESC"]]
     });
-   
+
     if (allLoans) {
       return res.status(200).json({
         status: 200,
         allLoans
-       
       });
     } else
       return res.status(500).json({
@@ -124,4 +145,54 @@ const adminViewAllLoans = async (req, res, next) => {
   }
 };
 
-export { loanRequest, adminViewAllLoans };
+const userViewLoanHistory = async (req, res, next) => {
+  const { id } = req.params;
+  try {
+    const userLoan = await loan.findOne({
+      where: { staff_id: id },
+      include: [
+        {
+          model: staff,
+          as: "owner",
+          attributes: [
+            "firstname",
+            "lastname",
+            "phone_number",
+            "email",
+            "img_url",
+            "branch",
+            "monthly_savings",
+            "account_number",
+            "bank_name",
+            "status"
+          ]
+        }
+      ],
+      order: [["updatedAt", "DESC"]]
+    });
+
+    if (!userLoan) {
+      return res.status(200).json({
+        status: 200,
+        message: "You currently do not have any loan"
+      });
+    }
+    if (userLoan) {
+      return res.status(200).json({
+        status: 200,
+        message: "User loans",
+        userLoan
+      });
+    } else {
+      return res.status(500).json({
+        status: 500,
+        error:
+          "Your request cannot be completed at this time please try again later"
+      });
+    }
+  } catch (error) {
+    console.log(error);
+    return next();
+  }
+};
+export { loanRequest, adminViewAllLoans, userViewLoanHistory };
