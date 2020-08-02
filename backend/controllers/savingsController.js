@@ -14,12 +14,7 @@ const uploadSavings = async (req, res, next) => {
   }
   try {
     // check if the user exist and the status is not deactivated
-    const findStaff = await saving.findOne({
-      where: { staff_id },
-      include: ["account_owner"],
-      order: [ [ 'createdAt', 'DESC' ]]
-    });
-    // const savingsRecord = await saving.findOne({where: {staff_id}, include: {model: staff}})
+    const findStaff = await staff.findOne({ staff_id });
 
     if (!findStaff) {
       return res.status(404).json({
@@ -27,7 +22,7 @@ const uploadSavings = async (req, res, next) => {
         status: 404
       });
     }
-    const { status } = findStaff.dataValues.account_owner.dataValues;
+    const { status } = findStaff.dataValues;
 
     if (status === "deactivated") {
       return res.status(400).json({
@@ -36,10 +31,37 @@ const uploadSavings = async (req, res, next) => {
         status: 400
       });
     }
-    // get user balance
-    const balance = findStaff.dataValues.balance;
+    // get user savings balance
+    const userSavings = await saving.findOne({
+      where: { staff_id },
+      order: [["updatedAt", "DESC"]]
+    });
+
+    // if user does not have any savings then create
+    if (!userSavings) {
+      const createSavings = await saving.create({
+        staff_id,
+        amount_saved,
+        balance: amount_saved,
+        posted_by
+      });
+      // since a user must have savings before applying for loan if the savings has been created then terminate the operation
+      if (createSavings) {
+        return res.status(201).json({
+          status: 201,
+          message: "Savings successfully uploaded for this user"
+        });
+      }
+      return res.status(500).json({
+        status: 500,
+        error: "Something went wrong please try again"
+      });
+    }
+    // if the user has a savings already
+    const { balance } = userSavings.dataValues;
     const newBalance = parseInt(balance) + parseInt(amount_saved);
 
+    // create new savings for the user
     const updloaded = await saving.create(
       {
         balance: newBalance,
@@ -49,9 +71,29 @@ const uploadSavings = async (req, res, next) => {
       },
       { where: { staff_id } }
     );
+    // check if the user has an active loan
+    const findLoan = await loan.findOne({
+      where: { staff_id, status: "APPROVED" },
+      order: [["updatedAt", "DESC"]]
+    });
+    // if user savings has been created successfully then update user loan with amount saved
     if (updloaded) {
+      if (findLoan) {
+        const { balance } = findLoan.dataValues;
+        const newBalance = parseInt(balance) - parseInt(amount_saved);
+        const updateLoan = await findLoan.update({
+          balance: newBalance
+        });
+        if (!updateLoan) {
+          return res.status(500).json({
+            error:
+              "Something happened while trying to update user loan balance",
+            status: 500
+          });
+        }
+      }
       return res.status(201).json({
-        message: "You have successfully updated this user saving",
+        message: "You have successfully updated this user savings",
         status: 201
       });
     } else
@@ -68,7 +110,36 @@ const uploadSavings = async (req, res, next) => {
 const viewSavingHistory = async (req, res, next) => {
   try {
     const findAllSavings = await saving.findAll({
-      include: ["account_owner", "processed_by"]
+      attributes: ["balance", "amount_saved", "createdAt", "updatedAt"],
+      include: [
+        {
+          model: staff,
+          as: "account_owner",
+          attributes: [
+            "firstname",
+            "lastname",
+            "phone_number",
+            "email",
+            "img_url",
+            "branch",
+            "monthly_savings",
+            "account_number",
+            "bank_name",
+            "status"
+          ]
+        },
+        {
+          model: staff,
+          as: "processed_by",
+          attributes: [
+            "firstname",
+            "lastname",
+            "phone_number",
+            "email",
+            "branch"
+          ]
+        }
+      ]
     });
 
     if (!findAllSavings) {
@@ -81,36 +152,7 @@ const viewSavingHistory = async (req, res, next) => {
     if (findAllSavings) {
       return res.status(200).json({
         status: 200,
-        savingHistory: findAllSavings.map(result => {
-          const {
-            balance,
-            staff_id,
-            amount_saved,
-            createdAt: savings_posted,
-            account_owner,
-            processed_by
-          } = result.dataValues;
-          if (result.dataValues.staff_id !== null)
-            return {
-              balance,
-              id: staff_id,
-              amount_saved,
-              savings_posted,
-              firstname: account_owner.firstname,
-              lastname: account_owner.lastname,
-              email: account_owner.email,
-              phone_number: account_owner.phone_number,
-              employed_as: account_owner.employed_as,
-              branch: account_owner.branch,
-              monthly_savings: account_owner.monthly_savings,
-              account_number: account_owner.account_number,
-              bank_name: account_owner.bank_name,
-              adminFirstName: processed_by.firstname,
-              adminLastName: processed_by.lastname,
-              adminEmailAress: processed_by.email,
-              adminPhoneNumber: processed_by.phone_number
-            };
-        })
+        findAllSavings
         // count: findAllSavings.length + " results found",
       });
     } else
@@ -129,7 +171,36 @@ const viewSavingOneHistory = async (req, res, next) => {
   try {
     const findAllSavings = await saving.findAll({
       where: { staff_id: id },
-      include: ["account_owner", "processed_by"]
+      attributes: ["balance", "amount_saved", "createdAt", "updatedAt"],
+      include: [
+        {
+          model: staff,
+          as: "account_owner",
+          attributes: [
+            "firstname",
+            "lastname",
+            "phone_number",
+            "email",
+            "img_url",
+            "branch",
+            "monthly_savings",
+            "account_number",
+            "bank_name",
+            "status"
+          ]
+        },
+        {
+          model: staff,
+          as: "processed_by",
+          attributes: [
+            "firstname",
+            "lastname",
+            "phone_number",
+            "email",
+            "branch"
+          ]
+        }
+      ]
     });
 
     if (!findAllSavings) {
@@ -138,44 +209,13 @@ const viewSavingOneHistory = async (req, res, next) => {
         message: "No result found for this user"
       });
     }
-    console.log(findAllSavings);
 
     if (findAllSavings) {
       return res.status(200).json({
         status: 200,
-
-        savingHistory: findAllSavings.map(result => {
-          const {
-            balance,
-            staff_id,
-            amount_saved,
-            createdAt: savings_posted,
-            account_owner,
-            processed_by
-          } = result.dataValues;
-          if (result.dataValues.staff_id !== null)
-            return {
-              balance,
-              id: staff_id,
-              amount_saved,
-              savings_posted,
-              firstname: account_owner.firstname,
-              lastname: account_owner.lastname,
-              email: account_owner.email,
-              phone_number: account_owner.phone_number,
-              employed_as: account_owner.employed_as,
-              branch: account_owner.branch,
-              monthly_savings: account_owner.monthly_savings,
-              account_number: account_owner.account_number,
-              bank_name: account_owner.bank_name,
-              adminFirstName: processed_by.firstname,
-              adminLastName: processed_by.lastname,
-              adminEmailAress: processed_by.email,
-              adminPhoneNumber: processed_by.phone_number
-            };
-        })
-        // count: findAllSavings.length + " results found",
+        findAllSavings
       });
+      // count: findAllSavings.length + " results found",
     } else
       return res.status(500).json({
         status: 500,
@@ -198,32 +238,31 @@ const adminModifySaving = async (req, res, next) => {
   }
   try {
     const transaction = await saving.findByPk(id);
-    if(!transaction){
+    if (!transaction) {
       return res.status(404).json({
         status: 404,
         error: "Transanction does not exist"
-      })
+      });
     }
-    const newBalance = parseInt(amount_saved) + parseInt(transaction.balance)
+    const newBalance = parseInt(amount_saved) + parseInt(transaction.balance);
     const updated = await transaction.update({
       amount_saved,
       balance: newBalance
-    })
-    if(updated){
-      
+    });
+    if (updated) {
       return res.status(200).json({
         status: 200,
         message: "You have successfully updated this transaction"
-      })
-    }else {
+      });
+    } else {
       return res.status(500).json({
         error: "Something went wrong",
         status: 500
-      })
+      });
     }
   } catch (error) {
-    console.log(error)
-    return next()
+    console.log(error);
+    return next();
   }
 };
 

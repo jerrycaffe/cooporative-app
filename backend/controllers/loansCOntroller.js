@@ -103,6 +103,18 @@ const loanRequest = async (req, res, next) => {
 const adminViewAllLoans = async (req, res, next) => {
   try {
     const allLoans = await loan.findAll({
+      attributes: [
+        "amount",
+        "interest",
+        "repayment",
+        "date_treeted",
+        "balance",
+        "purpose",
+        "admin_comment",
+        "status",
+        "createdAt",
+        "updatedAt"
+      ],
       include: [
         {
           model: staff,
@@ -126,7 +138,7 @@ const adminViewAllLoans = async (req, res, next) => {
           attributes: ["firstname", "lastname", "email", "phone_number"]
         }
       ],
-      order: [["createdAt", "DESC"]]
+      order: [["updatedAt", "DESC"]]
     });
 
     if (allLoans) {
@@ -150,6 +162,17 @@ const userViewLoanHistory = async (req, res, next) => {
   try {
     const userLoan = await loan.findOne({
       where: { staff_id: id },
+      attributes: [
+        "amount",
+        "interest",
+        "repayment",
+        "date_treeted",
+        "balance",
+        "purpose",
+        "admin_comment",
+        "status",
+        "createdAt"
+      ],
       include: [
         {
           model: staff,
@@ -195,4 +218,80 @@ const userViewLoanHistory = async (req, res, next) => {
     return next();
   }
 };
-export { loanRequest, adminViewAllLoans, userViewLoanHistory };
+
+const respondToLoan = async (req, res, next) => {
+  const { id } = req.params;
+  const adminId = req.user.id;
+  const { respond } = req.body;
+  let admin_commenting = req.body.admin_comment;
+
+  try {
+    const findUser = await loan.findOne({
+      where: { staff_id: id, status: "PENDING" },
+      include: [
+        {
+          model: staff,
+          as: "owner",
+          attributes: [
+            "firstname",
+            "lastname",
+            "phone_number",
+            "email",
+            "img_url",
+            "branch",
+            "monthly_savings",
+            "account_number",
+            "bank_name",
+            "status"
+          ]
+        }
+      ],
+      order: [["updatedAt", "DESC"]]
+    });
+    if (!findUser) {
+      return res.status(404).json({
+        status: 404,
+        error: "This user does not have a pending loan application"
+      });
+    }
+
+    if (isEmpty(respond)) {
+      return res.status(400).json({
+        status: 400,
+        error: "Please respond to user loan request to proceed"
+      });
+    }
+
+    if (respond === "DECLINE" && !admin_commenting) {
+      return res.status(400).json({
+        status: 400,
+        error: "Please state a reason for loan decline"
+      });
+    }
+
+    const date_treeted = respond === "DECLINE" ? null : new Date();
+    const admin_comment = admin_commenting;
+    const treeted_by = adminId;
+    const status = respond === "DECLINE" ? "DECLINED" : "APPROVED";
+
+    const updateLoan = await findUser.update({
+      status,
+      admin_comment,
+      date_treeted,
+      treeted_by
+    });
+    if (updateLoan) {
+      return res.status(201).json({
+        status: 201,
+        message: "Loan request has been treeted successfully "
+      });
+    }
+
+    return res.status(500).json({
+      status: 500,
+      error: "Something went wrong please try later"
+    });
+  } catch (error) {}
+};
+
+export { loanRequest, adminViewAllLoans, userViewLoanHistory, respondToLoan };
