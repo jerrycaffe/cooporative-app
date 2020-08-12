@@ -3,7 +3,12 @@ import { isEmpty, isNumberValid } from "../middleware/validate";
 
 const addItems = async (req, res, next) => {
   const image = req.file;
-
+  
+// need to clarify cost price per unit, selling price per unit, profit per unit, profit for all this quantity
+// unit = quantity bought
+// unit amount = price per one
+// selling price per unit amount= 4% of unit amount + unit amount
+// profit = (selling price - cost price)*quantity
   const { id } = req.user;
   let { unit, unit_amount, name, description } = req.body;
 
@@ -41,8 +46,8 @@ const addItems = async (req, res, next) => {
     });
   }
 
-  unit = !unit ? 1 : unit;
-  const selling_price = parseInt(unit_amount) +parseInt(unit_amount) * 0.05;
+  unit = unit ? unit : 1;
+  const selling_price = parseInt(unit_amount) + parseInt(unit_amount) * 0.04;
   const total_amount = unit * unit_amount;
   const profit = (selling_price * unit) - total_amount;
   console.log("selling at ",selling_price, profit, unit_amount);
@@ -83,6 +88,7 @@ const viewOne = async (req, res, next) => {
   try {
     const foundItem = await item.findOne({
       attributes: [
+        "id",
         "name",
         "description",
         "selling_price",
@@ -113,6 +119,7 @@ const viewAll = async (req, res, next) => {
   try {
     const foundItem = await item.findAll({
       attributes: [
+        "id",
         "name",
         "description",
         "selling_price",
@@ -137,6 +144,7 @@ const adminViewAll = async (req, res, next) => {
   try {
     const foundItem = await item.findAll({
       attributes: [
+        "id",
         "name",
         "description",
         "selling_price",
@@ -165,6 +173,7 @@ const adminViewOne = async (req, res, next) => {
   try {
     const foundItem = await item.findOne({
       attributes: [
+        "id",
         "name",
         "description",
         "selling_price",
@@ -181,6 +190,7 @@ const adminViewOne = async (req, res, next) => {
         {
           model: staff,
           attributes: [
+            "id",
             "firstname",
             "lastname",
             "phone_number",
@@ -260,7 +270,7 @@ const adminEdit = async (req, res, next) => {
 
     // Calculate the total amount for the item
     const total_amount = unit * unit_amount;
-    const toBeSoldAt = parseInt(unit_amount) +parseInt(unit_amount) * 0.05;
+    const toBeSoldAt = parseInt(unit_amount) +parseInt(unit_amount) * 0.04;
 
     const profit = (unit * toBeSoldAt) - total_amount;
 console.log(profit, toBeSoldAt)

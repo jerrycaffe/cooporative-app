@@ -16,14 +16,10 @@ import {
   isNumberValid
 } from "../middleware/validate";
 
+
 const addStaff = async (req, res, next) => {
   // get all variables from request body
-  const validateError = (error, code) => {
-    return res.status(code).json({
-      code,
-      error
-    });
-  };
+  
   const {
     firstname,
     lastname,
@@ -93,7 +89,7 @@ const addStaff = async (req, res, next) => {
   try {
     // hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
-    // check if the either the name or the password exist in the db
+    // check if either the name or the password exist in the db
     const checkUser = await staff.findAll({
       where: {
         email,
@@ -176,6 +172,8 @@ const staffLogin = async (req, res, next) => {
     }
 
     const passwordMatch = await bcrypt.compare(password, checkStaff.password);
+    
+    
     if (passwordMatch) {
       const { id, role } = checkStaff.dataValues;
       const payload = {
@@ -214,6 +212,7 @@ const adminViewAll = async (req, res, next) => {
   try {
     const allStaff = await staff.findAll({
       attributes: [
+        "id",
         "firstname",
         "lastname",
         "email",
@@ -234,7 +233,7 @@ const adminViewAll = async (req, res, next) => {
     return res.status(200).json({
       status: 200,
       count: allStaff.length,
-      message: allStaff
+      data: allStaff
     });
   } catch (error) {
     console.log(error);
@@ -246,8 +245,9 @@ const adminViewOne = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    const allStaff = await staff.findOne({
+    const foundStaff = await staff.findOne({
       attributes: [
+        "id",
         "firstname",
         "lastname",
         "email",
@@ -267,7 +267,7 @@ const adminViewOne = async (req, res, next) => {
 
     return res.status(200).json({
       status: 200,
-      message: allStaff
+      data: foundStaff
     });
   } catch (error) {
     console.log(error);
@@ -285,6 +285,7 @@ const adminViewBranch = async (req, res, next) => {
   try {
     const allStaff = await staff.findAll({
       attributes: [
+        "id",
         "firstname",
         "lastname",
         "email",
@@ -305,7 +306,7 @@ const adminViewBranch = async (req, res, next) => {
     return res.status(200).json({
       status: 200,
       count: allStaff.length,
-      message: allStaff
+      data: allStaff
     });
   } catch (error) {
     console.log(error);
@@ -326,6 +327,7 @@ const staffProfile = async (req, res, next) => {
 
     const profile = await staff.findOne({
       attributes: [
+        "id",
         "firstname",
         "lastname",
         "email",
@@ -347,7 +349,7 @@ const staffProfile = async (req, res, next) => {
     });
   } catch (error) {
     console.log(error);
-    next();
+    return next();
   }
 };
 

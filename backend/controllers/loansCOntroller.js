@@ -16,7 +16,7 @@ const loanRequest = async (req, res, next) => {
     return res.status(400).json({
       status: 400,
       error:
-        "Amount to be collected should be in number while repayment should be the number of months"
+        "Amount to be collected should be in number while repayment should be the number of months you wish the loan be deducted"
     });
   }
   try {
