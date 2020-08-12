@@ -5,6 +5,18 @@ module.exports = (sequelize, DataTypes) => {
     staff_id: {
       type: DataTypes.INTEGER
     },
+    status: {
+      type: DataTypes.STRING
+    },
+    quantity: {
+      type: DataTypes.INTEGER
+    },
+    unit_price: {
+      type: DataTypes.STRING
+    },
+    total_cost: {
+      type: DataTypes.STRING
+    },
     approved_by: {
       type: DataTypes.INTEGER
     },
