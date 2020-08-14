@@ -28,7 +28,8 @@ const makePurchase = async (req, res, next) => {
     const getItem = await item.findOne({
       where: { id: itemId }
     });
-
+    const { unit_amount: unit_price } = getItem;
+    const total_cost = parseInt(unit_price) * quantity;
     if (!getItem) {
       return res.status(404).json({
         status: 404,
@@ -94,7 +95,10 @@ const makePurchase = async (req, res, next) => {
     }
     const itemPurchase = await purchase.create({
       staff_id,
-      quantity
+      quantity,
+      item_id: itemId,
+      total_cost,
+      unit_price
     });
     if (itemPurchase) {
       return res.status(201).json({
@@ -114,4 +118,78 @@ const makePurchase = async (req, res, next) => {
   }
 };
 
-export { makePurchase };
+const adminViewAllPurchase = async (req, res, next) => {
+  try {
+    const allPurchase = await purchase.findAll({
+      include: [
+        {
+          model: staff,
+          as: "purchaser",
+          attributes: [
+            "firstname",
+            "lastname",
+            "email",
+            "phone_number",
+            "branch"
+          ]
+        },
+        {
+          model: staff,
+          as: "approval",
+          attributes: [
+            "firstname",
+            "lastname",
+            "email",
+            "phone_number",
+            "branch"
+          ]
+        }
+      ]
+    });
+    if (allPurchase.length >= 0) {
+      return res.status(200).json({
+        status: 200,
+        data: allPurchase
+      });
+    } else
+      return res.status(500).json({
+        status: 500,
+        error: "Something went wrong kindly try later"
+      });
+  } catch (error) {
+    console.log(error);
+    return next();
+  }
+};
+
+const userViewOnePurchase = async (req, res, next) => {
+  const { id } = req.params;
+  const staff_id = req.user.id 
+
+  try {
+    const onePurchase = await purchase.findOne({
+      where: {id, staff_id}
+    });
+    if (!onePurchase) {
+      return res.status(200).json({
+        status: 200,
+        data: "You did not purchase this item"
+      });
+    }
+    if (onePurchase) {
+      return res.status(200).json({
+        status: 200,
+        data: onePurchase
+      });
+    } else
+      return res.status(500).json({
+        status: 500,
+        error: "Something went wrong please try again later"
+      });
+  } catch (error) {
+    console.log(error);
+    return next();
+  }
+};
+
+export { makePurchase, adminViewAllPurchase, userViewOnePurchase };
