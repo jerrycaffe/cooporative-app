@@ -32,6 +32,7 @@ module.exports = (sequelize, DataTypes) => {
       selling_price: {
         type: DataTypes.STRING
       },
+    
       status: {
         type: DataTypes.STRING,
         defaultValue: "Available"

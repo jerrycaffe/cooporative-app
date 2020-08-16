@@ -164,16 +164,18 @@ const adminViewAllPurchase = async (req, res, next) => {
 
 const userViewOnePurchase = async (req, res, next) => {
   const { id } = req.params;
-  const staff_id = req.user.id 
+  const { id: staff_id, role } = req.user;
 
   try {
+    // check if the role is user then return only result associated to user idif
+
     const onePurchase = await purchase.findOne({
-      where: {id, staff_id}
+      where: { item_id: id, staff_id }
     });
     if (!onePurchase) {
-      return res.status(200).json({
-        status: 200,
-        data: "You did not purchase this item"
+      return res.status(404).json({
+        status: 404,
+        error: "You did not purchase this item"
       });
     }
     if (onePurchase) {
@@ -192,4 +194,200 @@ const userViewOnePurchase = async (req, res, next) => {
   }
 };
 
-export { makePurchase, adminViewAllPurchase, userViewOnePurchase };
+const adminViewOnePurchase = async (req, res, next) => {
+  const { id, itemId } = req.params;
+  try {
+    const getUserPurchase = await purchase.findOne({
+      where: { item_id: itemId, staff_id: id }
+    });
+    if (!getUserPurchase) {
+      return res.status(404).json({
+        status: 404,
+        error: "This user did not purchase this item"
+      });
+    }
+    if (getUserPurchase) {
+      return res.status(200).json({
+        status: 200,
+        data: getUserPurchase
+      });
+    } else
+      return res.status(500).json({
+        status: 500,
+        error: "Something went wrong please try again later"
+      });
+  } catch (error) {
+    console.log(error);
+    return next();
+  }
+};
+const userViewAllPurchase = async (req, res, next) => {
+  const { id } = req.user;
+  try {
+    const getUserPurchase = await purchase.findAll({
+      where: { staff_id: id }
+    });
+    console.log(getUserPurchase);
+
+    if (getUserPurchase.length === 0) {
+      return res.status(404).json({
+        status: 404,
+        error: "You didnt have any purchase history"
+      });
+    }
+    if (getUserPurchase) {
+      return res.status(200).json({
+        status: 200,
+        data: getUserPurchase
+      });
+    } else
+      return res.status(500).json({
+        status: 500,
+        error: "Something went wrong please try again later"
+      });
+  } catch (error) {
+    console.log(error);
+    return next();
+  }
+};
+const adminViewAllPurchaseRequest = async (req, res, next) => {
+  try {
+    const getAllPurchase = await purchase.findAll({
+      where: { status: "PENDING" },
+      include: {
+        model: staff,
+        as: "purchaser",
+        attributes: [
+          "firstname",
+          "lastname",
+          "email",
+          "phone_number",
+          "branch",
+          "employed_as",
+          "monthly_savings"
+        ]
+      }
+    });
+
+    if (getAllPurchase.length === 0) {
+      return res.status(404).json({
+        status: 404,
+        error: "There is no pending request"
+      });
+    }
+    if (getAllPurchase) {
+      return res.status(200).json({
+        status: 200,
+        data: getAllPurchase
+      });
+    } else
+      return res.status(500).json({
+        status: 500,
+        error: "Something went wrong please try again later"
+      });
+  } catch (error) {
+    console.log(error);
+    return next();
+  }
+};
+
+const adminRespondToPurchase = async (req, res, next) => {
+  //, purchase_id
+  const { purchase_id } = req.params;
+  const { id: adminId } = req.user;
+  const { respond, reason } = req.body;
+  if (isEmpty(respond)) {
+    return res.status(400).json({
+      error: "Please select an action to respond to this purchase",
+      status: 400
+    });
+  }
+  if (respond === "DECLINE" && !reason) {
+    return res.status(400).json({
+      error: "You must state a clear reason for declinig the purchase request",
+      status: 400
+    });
+  }
+  try {
+    const getPurchase = await purchase.findByPk(purchase_id);
+    console.log(getPurchase, "result for purchase");
+    if (!getPurchase) {
+      return res.status(404).json({
+        status: 404,
+        error:
+          "No purchase request with this transaction Id or the item cannot be found, please check if the tansaciton exist as well as the item"
+      });
+    }
+    const getItem = await item.findByPk(getPurchase.item_id);
+    if (!getItem) {
+      return res.status(404).json({
+        status: 404,
+        error:
+          "No purchase request with this transaction Id or the item cannot be found, please check if the tansaciton exist as well as the item"
+      });
+    }
+    if (respond === "APPROVE") {
+      if (getPurchase.status !== "PENDING") {
+        return res.status(403).json({
+          error:
+            "You cannot modify purchase that has been prevviously responded to",
+          status: 403
+        });
+      }
+      const approvePurchase = await getPurchase.update({
+        status: "APPROVED",
+        approved_by: adminId
+      });
+      if (approvePurchase) {
+        return res.status(203).json({
+          status: 203,
+          message: "You have succeffully responded to this purchase request"
+        });
+      } else
+        return res.status(500).json({
+          error: "Something went wrong please try again later",
+          status: 500
+        });
+    }
+    if (getPurchase.status !== "PENDING") {
+      return res.status(403).json({
+        error:
+          "You cannot modify or respond to request that has been attended to",
+        status: 400
+      });
+    }
+    const reverseQuantity = await getItem.update({
+      quantity: getPurchase.quantity
+    });
+
+
+    const declinePurchase = await getPurchase.update({
+      status: "DECLINED",
+      reason,
+      approved_by: adminId
+    });
+    if (reverseQuantity && declinePurchase) {
+      return res.status(200).json({
+        status: 200,
+        message: "You have successfull responded to this transaction"
+      });
+    }
+    return res.status(500).json({
+      status: 500,
+      error: "Something went wrong please try again later"
+    });
+  } catch (error) {
+    console.log(error);
+    return next();
+  }
+};
+
+export {
+  makePurchase,
+  adminViewAllPurchase,
+  userViewOnePurchase,
+  adminViewOnePurchase,
+  userViewAllPurchase,
+  adminViewAllPurchaseRequest,
+  adminRespondToPurchase
+};
