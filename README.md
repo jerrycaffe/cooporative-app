@@ -1,2 +1,2 @@
-# honeyland-welfare
-A web solution for staffs of the school to request for loan and access their savings account
+# Cooporative application
+A web solution for users to save, make purchases, request for loan and perform other activities.
