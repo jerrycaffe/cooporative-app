@@ -317,7 +317,16 @@ const adminViewBranch = async (req, res, next) => {
 };
 
 const userProfile = async (req, res, next) => {
+
+  if(req.params.id === undefined){
+    return res.status(403).json({
+      status: 403,
+      error: "You cannot view this resource"
+    });
+  }
   const userId = req.user.id;
+
+
   const { id } = req.params;
   try {
     if (userId != id) {
