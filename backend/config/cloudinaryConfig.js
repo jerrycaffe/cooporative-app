@@ -15,7 +15,7 @@ cloudinary.config({
 const storage = new CloudinaryStorage({
   cloudinary,
   params: {
-    folder: () => 'honeyland-items',
+    folder: () => 'cooporative-app',
     format: async () => 'png',
     public_id: (req, file) => file.originalname,
   },

@@ -4,8 +4,7 @@ import { config } from "dotenv";
 
 config();
 
-import { staff, saving, item, purchase, loan, complaint } from "../models";
-import models from "../models";
+import { user} from "../models";
 
 import {
   isNameValid,
@@ -17,7 +16,7 @@ import {
 } from "../middleware/validate";
 
 
-const addStaff = async (req, res, next) => {
+const addUser = async (req, res, next) => {
   // get all variables from request body
   
   const {
@@ -29,7 +28,7 @@ const addStaff = async (req, res, next) => {
     phone_number
   } = req.body;
 
-  // check for any empty field before adding staff
+  // check for any empty field before adding user
   if (
     isEmpty(firstname) ||
     isEmpty(lastname) ||
@@ -90,7 +89,7 @@ const addStaff = async (req, res, next) => {
     // hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
     // check if either the name or the password exist in the db
-    const checkUser = await staff.findAll({
+    const checkUser = await user.findAll({
       where: {
         email,
         phone_number
@@ -103,24 +102,24 @@ const addStaff = async (req, res, next) => {
         status: 409,
         success: false,
         message:
-          "User with this email and phone number already exist please provide another email and phone number to add staff"
+          "User with this email and phone number already exist please provide another email and phone number to add user"
       });
     }
 
     // store the user in the db if all went well
-    const createdStaff = await staff.create({
+    const createdUser = await user.create({
       firstname,
       lastname,
       password: hashedPassword,
       email,
       phone_number
     });
-    // if created staff returns a result then let user know record has been created
-    if (createdStaff) {
+    // if created user returns a result then let user know record has been created
+    if (createdUser) {
       return res.status(201).json({
         status: 201,
         success: true,
-        message: "You have successfully added a staff"
+        message: "You have successfully added a user"
       });
     }
   } catch (error) {
@@ -133,7 +132,8 @@ const addStaff = async (req, res, next) => {
   });
 };
 
-const staffLogin = async (req, res, next) => {
+// the function below takes care of the login
+const userLogin = async (req, res, next) => {
   const { email, password } = req.body;
 
   if (isEmpty(email) || isEmpty(password)) {
@@ -149,13 +149,13 @@ const staffLogin = async (req, res, next) => {
     });
   }
   try {
-    const checkStaff = await staff.findOne({
+    const checkUser = await user.findOne({
       where: {
         email
       }
     });
 
-    if (!checkStaff) {
+    if (!checkUser) {
       return res.status(404).json({
         status: 404,
         error: "User does not exist"
@@ -163,7 +163,7 @@ const staffLogin = async (req, res, next) => {
     }
     // check if user account is not deactivated
 
-    if (checkStaff.dataValues.status === "deactivated") {
+    if (checkUser.dataValues.status === "deactivated") {
       return res.status(403).json({
         status: 403,
         success: false,
@@ -171,11 +171,11 @@ const staffLogin = async (req, res, next) => {
       });
     }
 
-    const passwordMatch = await bcrypt.compare(password, checkStaff.password);
+    const passwordMatch = await bcrypt.compare(password, checkUser.password);
     
     
     if (passwordMatch) {
-      const { id, role } = checkStaff.dataValues;
+      const { id, role } = checkUser.dataValues;
       const payload = {
         id,
         role
@@ -208,9 +208,11 @@ const staffLogin = async (req, res, next) => {
   }
 };
 
+
+// admin user view all user in the db
 const adminViewAll = async (req, res, next) => {
   try {
-    const allStaff = await staff.findAll({
+    const allUser = await user.findAll({
       attributes: [
         "id",
         "firstname",
@@ -232,8 +234,8 @@ const adminViewAll = async (req, res, next) => {
 
     return res.status(200).json({
       status: 200,
-      count: allStaff.length,
-      data: allStaff
+      count: allUser.length,
+      data: allUser
     });
   } catch (error) {
     console.log(error);
@@ -245,7 +247,7 @@ const adminViewOne = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    const foundStaff = await staff.findOne({
+    const foundUser = await user.findOne({
       attributes: [
         "id",
         "firstname",
@@ -267,7 +269,7 @@ const adminViewOne = async (req, res, next) => {
 
     return res.status(200).json({
       status: 200,
-      data: foundStaff
+      data: foundUser
     });
   } catch (error) {
     console.log(error);
@@ -283,7 +285,7 @@ const adminViewBranch = async (req, res, next) => {
       .json({ status: 400, error: "Please select a branch" });
   }
   try {
-    const allStaff = await staff.findAll({
+    const allUser = await user.findAll({
       attributes: [
         "id",
         "firstname",
@@ -305,8 +307,8 @@ const adminViewBranch = async (req, res, next) => {
 
     return res.status(200).json({
       status: 200,
-      count: allStaff.length,
-      data: allStaff
+      count: allUser.length,
+      data: allUser
     });
   } catch (error) {
     console.log(error);
@@ -314,7 +316,7 @@ const adminViewBranch = async (req, res, next) => {
   }
 };
 
-const staffProfile = async (req, res, next) => {
+const userProfile = async (req, res, next) => {
   const userId = req.user.id;
   const { id } = req.params;
   try {
@@ -325,7 +327,7 @@ const staffProfile = async (req, res, next) => {
       });
     }
 
-    const profile = await staff.findOne({
+    const profile = await user.findOne({
       attributes: [
         "id",
         "firstname",
@@ -353,7 +355,7 @@ const staffProfile = async (req, res, next) => {
   }
 };
 
-const staffUpdateProfile = async (req, res, next) => {
+const userUpdateProfile = async (req, res, next) => {
   let image = req.file;
   const userId = req.user.id;
   const { id } = req.params;
@@ -406,7 +408,7 @@ const staffUpdateProfile = async (req, res, next) => {
   }
 
   try {
-    const findStaff = await staff.findByPk(id);
+    const findUser = await user.findByPk(id);
     let {
       lastname,
       firstname,
@@ -419,7 +421,7 @@ const staffUpdateProfile = async (req, res, next) => {
       bank_name,
       img_url,
       branch
-    } = findStaff.dataValues;
+    } = findUser.dataValues;
 
     firstname = first_name ? first_name : firstname;
     lastname = last_name ? last_name : lastname;
@@ -433,7 +435,7 @@ const staffUpdateProfile = async (req, res, next) => {
     account_number = accountNumber ? accountNumber : account_number;
     bank_name = bankName ? bankName : bank_name;
 
-    const saveChanges = await findStaff.update({
+    const saveChanges = await findUser.update({
       firstname,
       lastname,
       dob,
@@ -463,11 +465,11 @@ const staffUpdateProfile = async (req, res, next) => {
   }
 };
 export {
-  addStaff,
-  staffLogin,
+  addUser,
+  userLogin,
   adminViewAll,
   adminViewOne,
   adminViewBranch,
-  staffProfile,
-  staffUpdateProfile
+  userProfile,
+  userUpdateProfile
 };

@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 
-import { staff } from "../models";
+import { user } from "../models";
 
 // Proteect admin route
 export const adminProtect = async (req, res, next) => {
@@ -26,7 +26,7 @@ export const adminProtect = async (req, res, next) => {
     // verify token
     const decoded = jwt.verify(token, process.env.secretOrkey);
     if (decoded.role === "admin") {
-      req.user = await staff.findByPk(decoded.id);
+      req.user = await user.findByPk(decoded.id);
     } else {
       return res.status(403).json({
         status: 403,
@@ -44,7 +44,7 @@ export const adminProtect = async (req, res, next) => {
   }
 };
 
-export const staffProtect = async (req, res, next) => {
+export const userProtect = async (req, res, next) => {
   let token;
   if (
     req.headers.authorization &&
@@ -67,7 +67,7 @@ export const staffProtect = async (req, res, next) => {
     // verify token
     const decoded = jwt.verify(token, process.env.secretOrkey);
     if (decoded.role === "admin" || decoded.role ==="user") {
-      req.user = await staff.findByPk(decoded.id);
+      req.user = await user.findByPk(decoded.id);
     } else {
       return res.status(403).json({
         status: 403,

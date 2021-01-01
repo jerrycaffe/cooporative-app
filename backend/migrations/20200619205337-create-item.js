@@ -14,7 +14,7 @@ module.exports = {
       added_by: {
         type: Sequelize.INTEGER,
         references: {
-          model: "staffs",
+          model: "users",
           key: "id"
         },
         onUpdate: 'CASCADE'

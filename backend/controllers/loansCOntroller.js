@@ -1,4 +1,4 @@
-import { loan, staff, saving } from "../models";
+import { loan, user, saving } from "../models";
 import { isEmpty, isNumberValid } from "../middleware/validate";
 
 const loanRequest = async (req, res, next) => {
@@ -23,11 +23,11 @@ const loanRequest = async (req, res, next) => {
     //Perform a serach to check if the user has a loan
     const checkUserLoan = await loan.findOne({
       attributes: ["balance"],
-      where: { staff_id: id },
+      where: { user_id: id },
       order: [["createdAt", "DESC"]]
     });
 
-    // const findUser = await saving.findOne({where: {staff_id}})
+    // const findUser = await saving.findOne({where: {user_id}})
     if (checkUserLoan) {
       const { balance, status } = checkUserLoan.dataValues;
       const checkBalance = parseInt(balance);
@@ -41,7 +41,7 @@ const loanRequest = async (req, res, next) => {
     }
     const checkUserSavings = await saving.findOne({
       attributes: ["balance"],
-      where: { staff_id: id },
+      where: { user_id: id },
       order: [["createdAt", "DESC"]]
     });
 
@@ -69,7 +69,7 @@ const loanRequest = async (req, res, next) => {
     }
     const totalLoanBal = amountRequested + interest;
     const makeLoan = await loan.create({
-      staff_id: id,
+      user_id: id,
       amount,
       interest,
       repayment: monthOfpayment,
@@ -117,7 +117,7 @@ const adminViewAllLoans = async (req, res, next) => {
       ],
       include: [
         {
-          model: staff,
+          model: user,
           as: "owner",
           attributes: [
             "firstname",
@@ -133,7 +133,7 @@ const adminViewAllLoans = async (req, res, next) => {
           ]
         },
         {
-          model: staff,
+          model: user,
           as: "approver",
           attributes: ["firstname", "lastname", "email", "phone_number"]
         }
@@ -161,7 +161,7 @@ const userViewLoanHistory = async (req, res, next) => {
   const { id } = req.params;
   try {
     const userLoan = await loan.findOne({
-      where: { staff_id: id },
+      where: { user_id: id },
       attributes: [
         "amount",
         "interest",
@@ -175,7 +175,7 @@ const userViewLoanHistory = async (req, res, next) => {
       ],
       include: [
         {
-          model: staff,
+          model: user,
           as: "owner",
           attributes: [
             "firstname",
@@ -227,10 +227,10 @@ const respondToLoan = async (req, res, next) => {
 
   try {
     const findUser = await loan.findOne({
-      where: { staff_id: id, status: "PENDING" },
+      where: { user_id: id, status: "PENDING" },
       include: [
         {
-          model: staff,
+          model: user,
           as: "owner",
           attributes: [
             "firstname",

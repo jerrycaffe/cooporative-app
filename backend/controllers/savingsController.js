@@ -1,10 +1,10 @@
-import { loan, staff, saving } from "../models";
+import { loan, user, saving } from "../models";
 import { isEmpty, isNumberValid } from "../middleware/validate";
 
 const uploadSavings = async (req, res, next) => {
   const { amount_saved } = req.body;
   const posted_by = req.user.id;
-  const { staff_id } = req.params;
+  const { user_id } = req.params;
 
   if (isEmpty(amount_saved) || !isNumberValid(amount_saved)) {
     return res.status(400).json({
@@ -14,33 +14,33 @@ const uploadSavings = async (req, res, next) => {
   }
   try {
     // check if the user exist and the status is not deactivated
-    const findStaff = await staff.findOne({ staff_id });
+    const findUser = await user.findOne({ user_id });
 
-    if (!findStaff) {
+    if (!findUser) {
       return res.status(404).json({
         error: "You cannot upload the account of a non existing user",
         status: 404
       });
     }
-    const { status } = findStaff.dataValues;
+    const { status } = findUser.dataValues;
 
     if (status === "deactivated") {
       return res.status(400).json({
         error:
-          "This staff is not active on this platform review the staff status before updating this account",
+          "This user is not active on this platform review the user status before updating this account",
         status: 400
       });
     }
     // get user savings balance
     const userSavings = await saving.findOne({
-      where: { staff_id },
+      where: { user_id },
       order: [["updatedAt", "DESC"]]
     });
 
     // if user does not have any savings then create
     if (!userSavings) {
       const createSavings = await saving.create({
-        staff_id,
+        user_id,
         amount_saved,
         balance: amount_saved,
         posted_by
@@ -67,13 +67,13 @@ const uploadSavings = async (req, res, next) => {
         balance: newBalance,
         amount_saved,
         posted_by,
-        staff_id
+        user_id
       },
-      { where: { staff_id } }
+      { where: { user_id } }
     );
     // check if the user has an active loan
     const findLoan = await loan.findOne({
-      where: { staff_id, status: "APPROVED" },
+      where: { user_id, status: "APPROVED" },
       order: [["updatedAt", "DESC"]]
     });
     // if user savings has been created successfully then update user loan with amount saved
@@ -113,7 +113,7 @@ const viewSavingHistory = async (req, res, next) => {
       attributes: ["balance", "amount_saved", "createdAt", "updatedAt"],
       include: [
         {
-          model: staff,
+          model: user,
           as: "account_owner",
           attributes: [
             "firstname",
@@ -129,7 +129,7 @@ const viewSavingHistory = async (req, res, next) => {
           ]
         },
         {
-          model: staff,
+          model: user,
           as: "processed_by",
           attributes: [
             "firstname",
@@ -170,11 +170,11 @@ const viewSavingOneHistory = async (req, res, next) => {
   const { id } = req.params;
   try {
     const findAllSavings = await saving.findAll({
-      where: { staff_id: id },
+      where: { user_id: id },
       attributes: ["balance", "amount_saved", "createdAt", "updatedAt"],
       include: [
         {
-          model: staff,
+          model: user,
           as: "account_owner",
           attributes: [
             "firstname",
@@ -190,7 +190,7 @@ const viewSavingOneHistory = async (req, res, next) => {
           ]
         },
         {
-          model: staff,
+          model: user,
           as: "processed_by",
           attributes: [
             "firstname",

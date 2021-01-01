@@ -8,10 +8,10 @@ module.exports = {
         primaryKey: true,
         type: Sequelize.INTEGER
       },
-      staff_id: {
+      user_id: {
         type: Sequelize.INTEGER,
         references: {
-          model: "staffs",
+          model: "users",
           key: "id"
         },
         onDelete: 'SET NULL',
@@ -24,7 +24,7 @@ module.exports = {
       addressed_by: {
         type: Sequelize.INTEGER,
         references: {
-          model: "staffs",
+          model: "users",
           key: "id"
         },
         onDelete: 'CASCADE',

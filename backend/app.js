@@ -1,7 +1,7 @@
 import express from 'express';
 import morgan from 'morgan';
 
-import staff from './routes/api/authStaff';
+import user from './routes/api/authUser';
 import item from './routes/api/items';
 import savings from './routes/api/savings';
 import loans from './routes/api/loans';
@@ -24,14 +24,14 @@ app.use(morgan('tiny'))
 dbConnection();
 
 // routes
-app.use('/auth/staff', staff);
+app.use('/auth/user', user);
 app.use('/item', item);
 app.use('/loan', loans)
 app.use('/saving', savings)
 
 
 app.get('/', (req, res)=>{
-  res.send("Welcome to Honeyland Welfare Home")
+  res.send("Welcome to cooporative-app Home")
 })
 
 app.use((req, res, next) => {

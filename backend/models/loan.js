@@ -3,7 +3,7 @@ module.exports = (sequelize, DataTypes) => {
   const loan = sequelize.define(
     "loan",
     {
-      staff_id: {
+      user_id: {
         type: DataTypes.INTEGER
       },
       amount: {
@@ -42,11 +42,11 @@ module.exports = (sequelize, DataTypes) => {
   );
   loan.associate = function(models) {
     // associations can be defined here
-    loan.belongsTo(models.staff, {
+    loan.belongsTo(models.user, {
       as: "owner",
-      foreignKey: "staff_id"
+      foreignKey: "user_id"
     });
-    loan.belongsTo(models.staff, {
+    loan.belongsTo(models.user, {
       as: "approver",
       foreignKey: "treeted_by"
     });

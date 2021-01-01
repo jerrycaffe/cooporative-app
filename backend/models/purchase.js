@@ -2,7 +2,7 @@
 module.exports = (sequelize, DataTypes) => {
   const purchase = sequelize.define('purchase', {
     item_id: DataTypes.INTEGER,
-    staff_id: {
+    user_id: {
       type: DataTypes.INTEGER
     },
     approved_by: {
@@ -14,11 +14,11 @@ module.exports = (sequelize, DataTypes) => {
   }, {});
   purchase.associate = function(models) {
     // associations can be defined here
-    purchase.belongsTo(models.staff, {
+    purchase.belongsTo(models.user, {
       as: 'purchaser',
-      foreignKey: 'staff_id'
+      foreignKey: 'user_id'
     });
-    purchase.belongsTo(models.staff, {
+    purchase.belongsTo(models.user, {
       as: 'approval',
       foreignKey: 'approved_by'
     });

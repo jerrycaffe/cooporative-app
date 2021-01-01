@@ -1,4 +1,4 @@
-import { item, staff } from "../models";
+import { item, user } from "../models";
 import { isEmpty, isNumberValid } from "../middleware/validate";
 
 const addItems = async (req, res, next) => {
@@ -50,7 +50,7 @@ const addItems = async (req, res, next) => {
   const selling_price = parseInt(unit_amount) + parseInt(unit_amount) * 0.04;
   const total_amount = unit * unit_amount;
   const profit = (selling_price * unit) - total_amount;
-  console.log("selling at ",selling_price, profit, unit_amount);
+ 
   
   try {
     const newItem = await item.create({
@@ -188,7 +188,7 @@ const adminViewOne = async (req, res, next) => {
       where: { id },
       include: [
         {
-          model: staff,
+          model: user,
           attributes: [
             "id",
             "firstname",

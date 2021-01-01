@@ -8,10 +8,10 @@ module.exports = {
         primaryKey: true,
         type: Sequelize.INTEGER
       },
-      staff_id: {
+      user_id: {
         type: Sequelize.INTEGER,
         references: {
-          model: "staffs",
+          model: "users",
           key: "id"
         },
         onDelete: 'CASCADE',
@@ -37,7 +37,7 @@ module.exports = {
       approved_by: {
         type: Sequelize.INTEGER,
         references: {
-          model: "staffs",
+          model: "users",
           key: "id"
         },
         onUpdate: 'CASCADE'

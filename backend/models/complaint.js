@@ -2,7 +2,7 @@
 module.exports = (sequelize, DataTypes) => {
   const complaint = sequelize.define('complaint', {
     message: DataTypes.STRING,
-    staff_id: {
+    user_id: {
       type: DataTypes.INTEGER
     },
     message: {
@@ -14,11 +14,11 @@ module.exports = (sequelize, DataTypes) => {
   }, {});
   complaint.associate = function(models) {
     // associations can be defined here
-    complaint.belongsTo(models.staff, {
+    complaint.belongsTo(models.user, {
       as: 'complainant',
-      foreignKey: 'staff_id'
+      foreignKey: 'user_id'
     });
-    complaint.belongsTo(models.staff, {
+    complaint.belongsTo(models.user, {
       as: 'treeted_by',
       foreignKey: 'addressed_by'
     });

@@ -11,10 +11,10 @@ module.exports = {
       balance: {
         type: Sequelize.DECIMAL
       },
-      staff_id: {
+      user_id: {
         type: Sequelize.INTEGER,
         references: {
-          model: "staffs",
+          model: "users",
           key: "id"
         },
         onDelete: 'CASCADE',
@@ -26,7 +26,7 @@ module.exports = {
       posted_by: {
         type: Sequelize.INTEGER,
         references: {
-          model: "staffs",
+          model: "users",
           key: "id"
         },
         onUpdate: 'CASCADE'

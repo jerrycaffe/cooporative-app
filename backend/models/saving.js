@@ -2,7 +2,7 @@
 module.exports = (sequelize, DataTypes) => {
   const saving = sequelize.define('saving', {
     balance: DataTypes.STRING,
-    staff_id: {
+    user_id: {
       type: DataTypes.INTEGER,
     },
     amount_saved: {
@@ -14,11 +14,11 @@ module.exports = (sequelize, DataTypes) => {
   }, {});
   saving.associate = function(models) {
     // associations can be defined here
-    saving.belongsTo(models.staff, {
+    saving.belongsTo(models.user, {
       as: 'account_owner',
-      foreignKey: 'staff_id'
+      foreignKey: 'user_id'
     })
-    saving.belongsTo(models.staff, {
+    saving.belongsTo(models.user, {
       as: 'processed_by',
       foreignKey: 'posted_by'
     });
