@@ -5,6 +5,7 @@ import user from './routes/api/authUser';
 import item from './routes/api/items';
 import savings from './routes/api/savings';
 import loans from './routes/api/loans';
+import purchase from './routes/api/purchase';
 
 import dbConnection from './config/dbconnection';
 
@@ -26,9 +27,9 @@ dbConnection();
 // routes
 app.use('/auth/user', user);
 app.use('/item', item);
-app.use('/loan', loans)
-app.use('/saving', savings)
-
+app.use('/loan', loans);
+app.use('/saving', savings);
+app.use('/purchase', purchase);
 
 app.get('/', (req, res)=>{
   res.send("Welcome to cooporative-app Home")

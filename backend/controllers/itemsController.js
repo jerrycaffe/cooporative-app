@@ -3,12 +3,12 @@ import { isEmpty, isNumberValid } from "../middleware/validate";
 
 const addItems = async (req, res, next) => {
   const image = req.file;
-  
-// need to clarify cost price per unit, selling price per unit, profit per unit, profit for all this quantity
-// unit = quantity bought
-// unit amount = price per one
-// selling price per unit amount= 4% of unit amount + unit amount
-// profit = (selling price - cost price)*quantity
+
+  // need to clarify cost price per unit, selling price per unit, profit per unit, profit for all this quantity
+  // unit = quantity bought
+  // unit amount = price per one
+  // selling price per unit amount= 4% of unit amount + unit amount
+  // profit = (selling price - cost price)*quantity
   const { id } = req.user;
   let { unit, unit_amount, name, description } = req.body;
 
@@ -49,9 +49,9 @@ const addItems = async (req, res, next) => {
   unit = unit ? unit : 1;
   const selling_price = parseInt(unit_amount) + parseInt(unit_amount) * 0.04;
   const total_amount = unit * unit_amount;
-  const profit = (selling_price * unit) - total_amount;
- 
-  
+  const profit = selling_price * unit - total_amount;
+  const quantity_available = unit;
+
   try {
     const newItem = await item.create({
       added_by: id,
@@ -62,7 +62,8 @@ const addItems = async (req, res, next) => {
       profit,
       name,
       selling_price,
-      description
+      description,
+      quantity_available
     });
 
     if (newItem) {
@@ -95,6 +96,7 @@ const viewOne = async (req, res, next) => {
         "status",
         "unit",
         "img_url",
+        "quantity_available",
         ["updatedAt", "date added"]
       ],
       where: { id }
@@ -126,6 +128,7 @@ const viewAll = async (req, res, next) => {
         "status",
         "unit",
         "img_url",
+        "quantity_available",
         ["updatedAt", "date added"]
       ]
     });
@@ -154,6 +157,7 @@ const adminViewAll = async (req, res, next) => {
         "total_amount",
         "profit",
         "img_url",
+        "quantity_available",
         ["updatedAt", "date added"]
       ]
     });
@@ -183,6 +187,7 @@ const adminViewOne = async (req, res, next) => {
         "total_amount",
         "profit",
         "img_url",
+        "quantity_available",
         ["updatedAt", "date added"]
       ],
       where: { id },
@@ -222,16 +227,18 @@ const adminEdit = async (req, res, next) => {
   let image = req.file;
 
   const { id } = req.params;
-  let { unit, unit_amount, name, description } = req.body;
+  let { unit, unit_amount, name, description, quantity_available } = req.body;
 
   if (
     (!isEmpty(unit) && !isNumberValid(unit)) ||
-    (!isEmpty(unit_amount) && !isNumberValid(unit_amount))
+    (!isEmpty(unit_amount) && !isNumberValid(unit_amount)) ||
+    (!isEmpty(quantity_available) && !isNumberValid(quantity_available))
     // (!isEmpty(selling_price) && !isNumberValid(selling_price))
   ) {
     return res.status(400).json({
       status: 400,
-      error: "Unit, Unit amount and selling price must be numbers"
+      error:
+        "Unit, Unit amount, available quantity and selling price must be numbers"
     });
   }
 
@@ -257,6 +264,7 @@ const adminEdit = async (req, res, next) => {
       name: dbName,
       description: dbDescription,
       unit: dbUnit,
+      quantity_available: dbQuantity_available,
       // selling_price: dbSellingPrice,
       unit_amount: dbUnitAmount
     } = originalItem.dataValues;
@@ -265,15 +273,18 @@ const adminEdit = async (req, res, next) => {
     name = name ? name : dbName;
     description = description ? description : dbDescription;
     unit = unit ? unit : dbUnit;
+    quantity_available = quantity_available
+      ? quantity_available
+      : dbQuantity_available;
     // selling_price = selling_price ? selling_price : dbSellingPrice;
     unit_amount = unit_amount ? unit_amount : dbUnitAmount;
 
     // Calculate the total amount for the item
     const total_amount = unit * unit_amount;
-    const toBeSoldAt = parseInt(unit_amount) +parseInt(unit_amount) * 0.04;
+    const toBeSoldAt = parseInt(unit_amount) + parseInt(unit_amount) * 0.04;
 
-    const profit = (unit * toBeSoldAt) - total_amount;
-console.log(profit, toBeSoldAt)
+    const profit = unit * toBeSoldAt - total_amount;
+    console.log(profit, toBeSoldAt);
     const newItem = await item.update(
       {
         unit,
@@ -283,7 +294,8 @@ console.log(profit, toBeSoldAt)
         profit,
         name,
         selling_price: toBeSoldAt,
-        description
+        description,
+        quantity_available
       },
       { where: { id } }
     );
