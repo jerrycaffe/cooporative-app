@@ -156,9 +156,9 @@ const userLogin = async (req, res, next) => {
     });
 
     if (!checkUser) {
-      return res.status(404).json({
-        status: 404,
-        error: "User does not exist"
+      return res.status(401).json({
+        status: 401,
+        error: "User with this credentials does not exist"
       });
     }
     // check if user account is not deactivated
